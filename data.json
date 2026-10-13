@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "room": "ROOM-01",
+    "reserved_by": "Jules Gimenez",
+    "date": "2025-06-15",
+    "start_time": "7:00",
+    "end_time": "12:00"
+  },
+  {
+    "id": 2,
+    "room": "ROOM-02",
+    "reserved_by": "Lebron James",
+    "date": "2025-06-15",
+    "start_time": "12:30",
+    "end_time": "19:30"
+  },
+  {
+    "id": 3,
+    "room": "ROOM-03",
+    "reserved_by": "Isa Cerio",
+    "date": "2025-06-16",
+    "start_time": "12:30",
+    "end_time": "18:30"
+  },
+  {
+    "id": 4,
+    "room": "ROOM-04",
+    "reserved_by": "Ian Lee",
+    "date": "2025-06-17",
+    "start_time": "10:00",
+    "end_time": "20:00"
+  },
+  {
+    "id": 5,
+    "room": "ROOM-05",
+    "reserved_by": "Giya Mutia",
+    "date": "2025-06-18",
+    "start_time": "9:00",
+    "end_time": "19:00"
+  },
+  {
+    "id": 6,
+    "room": "ROOM-06",
+    "reserved_by": "HELLO",
+    "date": "2026-10-13",
+    "start_time": "21:18",
+    "end_time": "09:18"
+  },
+  {
+    "id": 7,
+    "room": "ROOM-06",
+    "reserved_by": "TESTES",
+    "date": "2026-10-15",
+    "start_time": "16:28",
+    "end_time": "16:28"
+  }
+]

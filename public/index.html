@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Reservation System</title>
+</head>
+<body>
+    <h1>Room Reservation System</h1>
+    <p>Welcome to the Room Reservation System! hello hellooo</p>
+
+    <button onclick="viewAllReservations()">View All Reservations</button>
+    <form id="searchByIDForm">
+        <input type="text" id="id" placeholder="Search by ID..." required>
+        <button type="submit">SEarch</button>
+    </form>
+
+    <table id="reservationsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Room</th>
+                <th>Reserved By</th>
+                <th>Date</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+            </tr>
+        </thead>
+        <tbody id="reservationsBody">
+        </tbody>
+    </table>
+
+    <form id="addReservationForm">
+        <input type="text" id="room" placeholder="Room No." required>
+        <input type="text" id="reservedBy" placeholder="Reserved By" required>
+        <input type="date" id="date" required>
+        <input type="time" id="startTime" required>
+        <input type="time" id="endTime" required>
+        <button type="submit">Add Reservation</button>
+    </form>
+
+    <form id="deleteReservationForm">
+        <input type="text" id="deleteId" placeholder="Reservation ID" required>
+        <button type="submit">Delete Reservation</button>
+    </form>
+
+    <script>
+        function viewAllReservations() {
+            fetch('/api/reservations/')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tableBody = document.getElementById('reservationsBody');
+                    tableBody.innerHTML = '';
+                    const reservations = Array.isArray(data) ? data : data.reservations;
+                    if (!Array.isArray(reservations)) {
+                        throw new Error('Invalid reservations response');
+                    }
+                    reservations.forEach(reservation => {
+                        const row = tableBody.insertRow();
+                        row.insertCell(0).textContent = reservation.id;
+                        row.insertCell(1).textContent = reservation.room;
+                        row.insertCell(2).textContent = reservation.reserved_by;
+                        row.insertCell(3).textContent = reservation.date;
+                        row.insertCell(4).textContent = reservation.start_time;
+                        row.insertCell(5).textContent = reservation.end_time;
+                    });
+                })
+                .catch(error => {
+                    console.error('Unable to fetch reservations:', error);
+                });
+        }
+
+        function getReservationById(event) {
+            event.preventDefault();
+            const id = document.getElementById('id').value;
+            fetch(`/api/reservations/${encodeURIComponent(id)}/`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Request failed with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    const tableBody = document.getElementById('reservationsBody');
+                    tableBody.innerHTML = '';
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = data.id;
+                    row.insertCell(1).textContent = data.room;
+                    row.insertCell(2).textContent = data.reserved_by;
+                    row.insertCell(3).textContent = data.date;
+                    row.insertCell(4).textContent = data.start_time;
+                    row.insertCell(5).textContent = data.end_time;
+                })
+                .catch(error => {
+                    console.error('Unable to fetch reservation by ID:', error);
+                });
+        }
+
+        function addReservation(event) {
+            event.preventDefault();
+            const room = document.getElementById('room').value;
+            const reservedBy = document.getElementById('reservedBy').value;
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+
+            fetch('/api/reservations/')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Unable to determine the next reservation ID (status ${response.status})`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                const reservations = Array.isArray(data) ? data : data.reservations;
+                if (!Array.isArray(reservations)) {
+                    throw new Error('Invalid reservations response');
+                }
+                const nextId = reservations.reduce((maxId, reservation) => {
+                    const id = Number(reservation.id);
+                    return Number.isFinite(id) ? Math.max(maxId, id) : maxId;
+                }, 0) + 1;
+
+                return fetch('/api/reservations/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: nextId, room, reserved_by: reservedBy, date, start_time: startTime, end_time: endTime })
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => ({})).then(error => {
+                        throw new Error(error.message || error.error || (response.status === 409
+                            ? 'This room is already reserved for the selected time.'
+                            : `Request failed with status ${response.status}`));
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Reservation added successfully.');
+                document.getElementById('addReservationForm').reset();
+                viewAllReservations(); // refresh
+            })
+            .catch(error => {
+                console.error('Unable to add reservation:', error);
+                alert(error.message || 'Unable to add reservation. The room may already be taken.');
+            });
+        }
+
+        function deleteReservation(event) {
+            event.preventDefault();
+            const id = document.getElementById('deleteId').value;
+
+            fetch(`/api/reservations/${encodeURIComponent(id)}/`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().catch(() => ({})).then(error => {
+                        throw new Error(error.message || error.error || (response.status === 404
+                            ? 'Reservation not found.'
+                            : `Request failed with status ${response.status}`));
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                alert('Reservation deleted successfully.');
+                document.getElementById('deleteReservationForm').reset();
+                viewAllReservations(); 
+            })
+            .catch(error => {
+                console.error('Unable to delete reservation:', error);
+                alert(error.message || 'Unable to delete reservation. The reservation may not exist.');
+            });
+        }
+
+        document.getElementById('searchByIDForm').addEventListener('submit', getReservationById);
+        document.getElementById('addReservationForm').addEventListener('submit', addReservation);
+        document.getElementById('deleteReservationForm').addEventListener('submit', deleteReservation);
+    </script>
+
+</body>
+</html>

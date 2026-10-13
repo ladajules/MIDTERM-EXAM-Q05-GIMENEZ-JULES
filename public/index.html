@@ -4,10 +4,123 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Reservation System</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 20px 40px;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f4f4;
+            color: #222222;
+        }
+
+        h1 {
+            margin: 0 0 12px;
+            font-size: 2rem;
+        }
+
+        p {
+            margin: 0 0 18px;
+            color: #555555;
+            font-size: 1rem;
+        }
+
+        form,
+        table {
+            background: #ffffff;
+            border: 1px solid #d9d9d9;
+            border-radius: 8px;
+        }
+
+        form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            max-width: 980px;
+            padding: 14px;
+            margin: 18px 0;
+        }
+
+        input {
+            flex: 1 1 180px;
+            min-width: 140px;
+            padding: 10px 12px;
+            border: 1px solid #d9d9d9;
+            border-radius: 6px;
+            background: #fff;
+            color: #222222;
+            font-size: 0.95rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #7a7a7a;
+        }
+
+        button {
+            border: 1px solid #222222;
+            background: #222222;
+            color: #ffffff;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #333333;
+        }
+
+        table {
+            width: 100%;
+            max-width: 980px;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+
+        thead {
+            background: #2a2a2a;
+            color: #ffffff;
+        }
+
+        th,
+        td {
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 1px solid #d9d9d9;
+        }
+
+        tbody tr:nth-child(even) {
+            background: #fafafa;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 20px 14px 32px;
+            }
+
+            h1 {
+                font-size: 1.7rem;
+            }
+
+            form {
+                padding: 12px;
+            }
+
+            button,
+            input {
+                width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <h1>Room Reservation System</h1>
-    <p>Welcome to the Room Reservation System! hello hellooo</p>
+    <p>Welcome to the Room Reservation System!</p>
 
     <button onclick="viewAllReservations()">View All Reservations</button>
     <form id="searchByIDForm">
@@ -46,9 +159,10 @@
 
     <script>
         function viewAllReservations() {
-            fetch('/api/reservations/')
-                .then(response => {
+            fetch('/api/reservations/').then(response => {
                     if (!response.ok) {
+                        if (response.status === 404) throw new Error('Reservation not found.');
+
                         throw new Error(`Request failed with status ${response.status}`);
                     }
                     return response.json();
@@ -57,9 +171,8 @@
                     const tableBody = document.getElementById('reservationsBody');
                     tableBody.innerHTML = '';
                     const reservations = Array.isArray(data) ? data : data.reservations;
-                    if (!Array.isArray(reservations)) {
-                        throw new Error('Invalid reservations response');
-                    }
+                    if (!Array.isArray(reservations)) throw new Error('Invalid reservations response');
+                    
                     reservations.forEach(reservation => {
                         const row = tableBody.insertRow();
                         row.insertCell(0).textContent = reservation.id;
@@ -78,11 +191,9 @@
         function getReservationById(event) {
             event.preventDefault();
             const id = document.getElementById('id').value;
-            fetch(`/api/reservations/${encodeURIComponent(id)}/`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Request failed with status ${response.status}`);
-                    }
+            fetch(`/api/reservations/${encodeURIComponent(id)}/`).then(response => {
+                    if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+
                     return response.json();
                 })
                 .then(data => {
@@ -98,6 +209,7 @@
                 })
                 .catch(error => {
                     console.error('Unable to fetch reservation by ID:', error);
+                    alert(error.message || 'Reservation not found.');
                 });
         }
 
@@ -109,11 +221,8 @@
             const startTime = document.getElementById('startTime').value;
             const endTime = document.getElementById('endTime').value;
 
-            fetch('/api/reservations/')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Unable to determine the next reservation ID (status ${response.status})`);
-                }
+            fetch('/api/reservations/').then(response => {
+                if (!response.ok) throw new Error(`Unable to determine the next reservation ID (status ${response.status})`);
                 return response.json();
             })
             .then(data => {
@@ -161,13 +270,10 @@
 
             fetch(`/api/reservations/${encodeURIComponent(id)}/`, {
                 method: 'DELETE'
-            })
-            .then(response => {
+            }).then(response => {
                 if (!response.ok) {
                     return response.json().catch(() => ({})).then(error => {
-                        throw new Error(error.message || error.error || (response.status === 404
-                            ? 'Reservation not found.'
-                            : `Request failed with status ${response.status}`));
+                        throw new Error(error.message || error.error || (response.status === 404? 'Reservation not found.' : `Request failed with status ${response.status}`));
                     });
                 }
                 return response.json();
